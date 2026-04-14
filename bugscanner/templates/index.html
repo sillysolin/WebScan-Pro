@@ -1,0 +1,476 @@
+{% extends "base.html" %}
+{% block title %}BugScanner Pro — AI-Powered Vulnerability Scanner{% endblock %}
+
+{% block extra_head %}
+<style>
+.hero{text-align:center;padding:64px 20px 40px}
+.hero h1{font-size:40px;font-weight:700;letter-spacing:-1px;margin-bottom:14px;line-height:1.1}
+.hero h1 .accent{color:var(--green)}
+.hero p{font-size:15px;color:var(--text2);max-width:500px;margin:0 auto 40px;line-height:1.7}
+.scan-card{background:var(--bg2);border:1px solid var(--border);border-radius:18px;padding:32px;max-width:760px;margin:0 auto}
+.field-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}
+.field-row.single{grid-template-columns:1fr}
+.field-label{font-size:11px;text-transform:uppercase;letter-spacing:1.5px;color:var(--text3);margin-bottom:5px;font-weight:500}
+.field-input{width:100%;background:var(--bg4);border:1px solid var(--border2);border-radius:10px;padding:11px 16px;color:var(--text);font-family:var(--font);font-size:14px;outline:none;transition:border-color .15s}
+.field-input:focus{border-color:var(--green)}
+.field-input::placeholder{color:var(--text3)}
+.scan-btn{width:100%;padding:14px;border-radius:10px;background:var(--green);color:#000;border:none;font-size:15px;font-weight:600;cursor:pointer;font-family:var(--font);display:flex;align-items:center;justify-content:center;gap:10px;transition:all .15s;margin-top:16px}
+.scan-btn:hover{background:#2fc07a}
+.scan-btn:disabled{opacity:.5;cursor:not-allowed}
+.ai-section{background:var(--bg4);border:1px solid var(--border);border-radius:10px;padding:14px 16px;margin-top:14px}
+.ai-toggle{display:flex;align-items:center;gap:10px;cursor:pointer;font-size:13px;color:var(--text2)}
+.ai-badge{background:#1a0f35;color:#a78bfa;border:1px solid #3d2a6e;border-radius:4px;padding:2px 8px;font-size:10px;font-weight:600;font-family:var(--mono)}
+.ai-key-row{margin-top:12px;display:none}
+.modules-row{display:flex;flex-wrap:wrap;gap:6px;margin-top:18px}
+.module-pill{background:var(--bg4);border:1px solid var(--border);border-radius:20px;padding:4px 12px;font-size:11px;color:var(--text3);display:flex;align-items:center;gap:6px}
+.module-dot{width:5px;height:5px;border-radius:50%;background:var(--green)}
+.legal{font-size:11px;color:var(--text3);text-align:center;margin-top:14px}
+/* Scanning */
+.scanning-state{display:none;text-align:center;padding:60px 20px}
+.scanner-animation{position:relative;width:80px;height:80px;margin:0 auto 24px}
+.pulse-ring{position:absolute;inset:0;border-radius:50%;border:2px solid var(--green);animation:pulse-ring 1.5s ease-out infinite}
+.pulse-ring:nth-child(2){animation-delay:.5s}
+.pulse-ring:nth-child(3){animation-delay:1s}
+.pulse-core{position:absolute;inset:20px;background:var(--green-bg);border:1px solid var(--green);border-radius:50%;display:flex;align-items:center;justify-content:center}
+@keyframes pulse-ring{0%{transform:scale(.8);opacity:1}100%{transform:scale(2);opacity:0}}
+.scan-log{font-family:var(--mono);font-size:12px;color:var(--text2);margin-top:16px;min-height:40px}
+.scan-progress{width:320px;height:3px;background:var(--border);border-radius:2px;margin:16px auto 0;overflow:hidden}
+.scan-progress-fill{height:100%;background:var(--green);border-radius:2px;transition:width .6s ease;width:0%}
+/* Results */
+#results-section{display:none}
+.risk-header{border-radius:16px;padding:28px 32px;margin-bottom:24px;border:1px solid}
+.risk-critical{background:linear-gradient(135deg,#1e0a0a,#2a0d0d);border-color:#5a1a1a}
+.risk-high{background:linear-gradient(135deg,#1e100a,#2a160a);border-color:#4a2510}
+.risk-medium{background:linear-gradient(135deg,#1a1408,#252010);border-color:#4a3d10}
+.risk-low{background:linear-gradient(135deg,#0a1a0d,#0d2412);border-color:#0d3020}
+.risk-clean{background:var(--bg2);border-color:var(--border)}
+.risk-score-circle{width:80px;height:80px;border-radius:50%;border:3px solid currentColor;display:flex;flex-direction:column;align-items:center;justify-content:center;flex-shrink:0}
+.risk-score-num{font-size:24px;font-weight:700;font-family:var(--mono);line-height:1}
+.risk-score-label{font-size:9px;text-transform:uppercase;letter-spacing:1px;opacity:.7}
+.risk-content{flex:1}
+.risk-domain{font-size:22px;font-weight:700;margin-bottom:4px;letter-spacing:-0.3px}
+.risk-meta-row{font-size:13px;color:var(--text2);margin-bottom:12px}
+.count-pills{display:flex;gap:8px;flex-wrap:wrap}
+.count-pill{padding:4px 14px;border-radius:20px;font-size:12px;font-weight:600;font-family:var(--mono)}
+.tabs{display:flex;gap:2px;background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:4px;margin-bottom:20px}
+.tab{flex:1;padding:8px;text-align:center;border-radius:7px;font-size:13px;font-weight:500;cursor:pointer;color:var(--text3);transition:all .15s}
+.tab.active{background:var(--bg4);color:var(--text)}
+.filter-bar{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;align-items:center}
+.filter-btn{padding:5px 14px;border-radius:20px;font-size:11px;font-weight:500;cursor:pointer;border:1px solid var(--border);background:transparent;color:var(--text3);transition:all .15s;font-family:var(--font)}
+.filter-btn:hover,.filter-btn.active{border-color:var(--green);color:var(--green);background:#0a2015}
+.finding-card{background:var(--bg2);border:1px solid var(--border);border-radius:12px;margin-bottom:8px;overflow:hidden}
+.finding-top{padding:14px 18px;display:flex;align-items:center;gap:12px;cursor:pointer;transition:background .15s}
+.finding-top:hover{background:var(--bg3)}
+.finding-module{font-size:10px;text-transform:uppercase;letter-spacing:1.5px;color:var(--text3);min-width:120px;flex-shrink:0}
+.finding-name{font-size:13px;font-weight:500;color:var(--text);flex:1}
+.cvss-badge{font-family:var(--mono);font-size:11px;font-weight:600;padding:2px 8px;border-radius:4px;min-width:36px;text-align:center}
+.finding-chevron{color:var(--text3);font-size:10px;transition:transform .2s;flex-shrink:0}
+.finding-chevron.open{transform:rotate(90deg)}
+.finding-detail{display:none;border-top:1px solid var(--border);padding:16px 18px}
+.finding-detail.open{display:block}
+.detail-grid{display:grid;grid-template-columns:110px 1fr;gap:8px 12px;align-items:start;margin-bottom:10px}
+.dl{font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--text3);padding-top:2px;font-weight:500}
+.dv{font-size:13px;color:var(--text2);line-height:1.6}
+.evidence-box{background:var(--bg4);border:1px solid var(--border);border-radius:8px;padding:10px 14px;font-family:var(--mono);font-size:11px;color:var(--teal);word-break:break-all;line-height:1.6}
+.cvss-vector{font-family:var(--mono);font-size:10px;color:var(--text3);margin-top:4px}
+.ai-analysis-box{background:#0f1a0f;border:1px solid #1a3a1a;border-radius:8px;padding:12px 14px;font-size:13px;color:#8de8a0;line-height:1.7;margin-top:8px}
+.ai-label{font-size:10px;text-transform:uppercase;letter-spacing:1.5px;color:#3a6a3a;margin-bottom:6px;font-weight:600}
+/* Matrix tab */
+.matrix-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:1px;background:var(--border)}
+.matrix-header{background:var(--bg3);padding:8px;text-align:center;font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--text3)}
+.matrix-cell{background:var(--bg2);padding:14px 8px;text-align:center}
+.matrix-cell .num{font-size:28px;font-weight:700;font-family:var(--mono);line-height:1}
+.matrix-cell .lbl{font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--text3);margin-top:4px}
+.bar-row{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border)}
+.bar-label{width:90px;font-size:12px;color:var(--text2);flex-shrink:0}
+.bar-track{flex:1;height:8px;background:var(--border);border-radius:4px;overflow:hidden}
+.bar-fill{height:100%;border-radius:4px;transition:width .6s ease}
+.bar-count{font-family:var(--mono);font-size:12px;color:var(--text3);width:28px;text-align:right;flex-shrink:0}
+.gen-report-btn{background:#1a0f35;border:1px solid #3d2a6e;color:#a78bfa;border-radius:10px;padding:12px 20px;font-size:13px;font-weight:500;cursor:pointer;font-family:var(--font);display:flex;align-items:center;gap:8px;transition:all .15s}
+.gen-report-btn:hover{background:#251545}
+</style>
+{% endblock %}
+
+{% block body %}
+<div style="max-width:1100px;margin:0 auto;padding:0 28px 60px">
+  <div class="hero">
+    <h1>AI-Powered <span class="accent">Bug Scanner</span><br>& Report Generator</h1>
+    <p>Automatically discovers vulnerabilities across 9 security modules, scores them with CVSS v3.1, and generates a professional pentest report.</p>
+  </div>
+
+  <!-- Scan form -->
+  <div class="scan-card" id="scan-form">
+    <div class="field-row single">
+      <div>
+        <div class="field-label">Target URL</div>
+        <input class="field-input" id="url" placeholder="https://target.com" style="font-family:var(--mono)"/>
+      </div>
+    </div>
+    <div class="field-row">
+      <div>
+        <div class="field-label">Tester Name</div>
+        <input class="field-input" id="tester" placeholder="Your Name"/>
+      </div>
+      <div>
+        <div class="field-label">Client / Organisation</div>
+        <input class="field-input" id="client" placeholder="Client Company Ltd"/>
+      </div>
+    </div>
+
+    <div class="ai-section">
+      <label class="ai-toggle">
+        <input type="checkbox" id="ai-toggle-cb" style="accent-color:var(--purple)" onchange="toggleAI()"/>
+        Enable AI-powered report generation
+        <span class="ai-badge">✦ AI</span>
+        <span style="font-size:11px;color:var(--text3);margin-left:4px">(uses Claude API — optional)</span>
+      </label>
+      <div class="ai-key-row" id="ai-key-row">
+        <div class="field-label">Anthropic API Key</div>
+        <input class="field-input" id="api-key" type="password" placeholder="sk-ant-..." style="font-family:var(--mono)"/>
+        <div style="font-size:11px;color:var(--text3);margin-top:6px">Key is used only for this session and never stored. Get one at <a href="https://console.anthropic.com" target="_blank" style="color:var(--purple)">console.anthropic.com</a></div>
+      </div>
+    </div>
+
+    <button class="scan-btn" id="scan-btn" onclick="startScan()">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="7" cy="7" r="5.5" stroke="currentColor" stroke-width="1.5"/><path d="M11 11l3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+      Start Security Scan
+    </button>
+
+    <div class="modules-row">
+      {% for m in ['Security Headers','SSL/TLS','Cookies','CORS','XSS Probe','SQLi Probe','File Enum','Authentication','Info Disclosure'] %}
+      <div class="module-pill"><div class="module-dot"></div>{{ m }}</div>
+      {% endfor %}
+    </div>
+    <div class="legal">⚠ Only scan systems you own or have explicit written authorisation to test.</div>
+  </div>
+
+  <!-- Scanning animation -->
+  <div class="scanning-state" id="scanning-state">
+    <div class="scanner-animation">
+      <div class="pulse-ring"></div><div class="pulse-ring"></div><div class="pulse-ring"></div>
+      <div class="pulse-core">
+        <svg width="20" height="20" viewBox="0 0 16 16" fill="none"><circle cx="7" cy="7" r="5" stroke="var(--green)" stroke-width="1.5"/><path d="M11 11l3 3" stroke="var(--green)" stroke-width="1.5" stroke-linecap="round"/></svg>
+      </div>
+    </div>
+    <div style="font-size:16px;font-weight:500;color:var(--text)">Scanning target...</div>
+    <div class="scan-log" id="scan-log">Initialising scan modules...</div>
+    <div class="scan-progress"><div class="scan-progress-fill" id="scan-progress"></div></div>
+  </div>
+
+  <!-- Results -->
+  <div id="results-section">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:12px">
+      <div style="font-size:13px;color:var(--text3)" id="result-timestamp"></div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap">
+        <button class="btn btn-ghost" onclick="document.getElementById('scan-form').scrollIntoView({behavior:'smooth'})">New Scan</button>
+        <button class="gen-report-btn" onclick="generateReport()">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M9 1H3a1 1 0 00-1 1v12a1 1 0 001 1h10a1 1 0 001-1V6l-5-5z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/><path d="M9 1v5h5" stroke="currentColor" stroke-width="1.3"/></svg>
+          Generate Professional Report
+        </button>
+      </div>
+    </div>
+
+    <!-- Risk header -->
+    <div class="risk-header" id="risk-header">
+      <div style="display:flex;align-items:center;gap:20px;flex-wrap:wrap">
+        <div class="risk-score-circle" id="risk-circle">
+          <div class="risk-score-num" id="risk-score-num">0</div>
+          <div class="risk-score-label">Risk Score</div>
+        </div>
+        <div class="risk-content">
+          <div class="risk-domain" id="risk-domain"></div>
+          <div class="risk-meta-row" id="risk-meta"></div>
+          <div class="count-pills" id="count-pills"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="tabs">
+      <div class="tab active" onclick="switchTab('findings',this)">Findings</div>
+      <div class="tab" onclick="switchTab('matrix',this)">Risk Matrix</div>
+      <div class="tab" onclick="switchTab('modules',this)">By Module</div>
+    </div>
+
+    <!-- Findings tab -->
+    <div id="tab-findings">
+      <div class="filter-bar">
+        <button class="filter-btn active" onclick="filterFindings('all',this)">All</button>
+        <button class="filter-btn" onclick="filterFindings('critical',this)">Critical</button>
+        <button class="filter-btn" onclick="filterFindings('high',this)">High</button>
+        <button class="filter-btn" onclick="filterFindings('medium',this)">Medium</button>
+        <button class="filter-btn" onclick="filterFindings('low',this)">Low</button>
+        <button class="filter-btn" onclick="filterFindings('info',this)">Info</button>
+        <button class="btn btn-ghost" style="margin-left:auto;padding:5px 14px;font-size:12px" onclick="exportJSON()">Export JSON</button>
+      </div>
+      <div id="findings-container"></div>
+    </div>
+
+    <!-- Matrix tab -->
+    <div id="tab-matrix" style="display:none">
+      <div class="section" style="background:var(--bg2);border:1px solid var(--border);border-radius:14px;overflow:hidden;margin-bottom:20px">
+        <div class="matrix-grid" id="matrix-grid"></div>
+      </div>
+      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:20px">
+        <div style="font-size:11px;text-transform:uppercase;letter-spacing:2px;color:var(--text3);margin-bottom:16px">Severity Distribution</div>
+        <div id="severity-bars"></div>
+      </div>
+    </div>
+
+    <!-- Modules tab -->
+    <div id="tab-modules" style="display:none">
+      <div id="modules-container"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const SEV = {
+  critical: {color:'#f05555', bg:'#2e1212', border:'#4a1a1a'},
+  high:     {color:'#f08050', bg:'#2a1a0a', border:'#3e2510'},
+  medium:   {color:'#f0b429', bg:'#2a2008', border:'#3a2d0e'},
+  low:      {color:'#3dd68c', bg:'#0e2a18', border:'#0d3020'},
+  info:     {color:'#4d8af0', bg:'#0e1c3a', border:'#0e2040'},
+};
+
+let scanData = null;
+let reportData = null;
+let activeFilter = 'all';
+
+const LOGS = [
+  "Resolving DNS and fetching response headers...",
+  "Analysing security response headers...",
+  "Probing SSL/TLS certificate and cipher configuration...",
+  "Auditing cookie security attributes...",
+  "Testing CORS policy for misconfigurations...",
+  "Injecting XSS reflection probes into parameters...",
+  "Running error-based SQL injection detection...",
+  "Enumerating sensitive files and directories...",
+  "Checking authentication mechanisms...",
+  "Gathering information disclosure indicators...",
+  "Calculating CVSS v3.1 scores for all findings...",
+  "Compiling results..."
+];
+
+function toggleAI() {
+  const cb = document.getElementById('ai-toggle-cb');
+  document.getElementById('ai-key-row').style.display = cb.checked ? 'block' : 'none';
+}
+
+async function startScan() {
+  const url = document.getElementById('url').value.trim();
+  if (!url) { alert('Please enter a target URL'); return; }
+
+  document.getElementById('scan-form').style.opacity = '0.4';
+  document.getElementById('scan-form').style.pointerEvents = 'none';
+  document.getElementById('scanning-state').style.display = 'block';
+  document.getElementById('results-section').style.display = 'none';
+  document.getElementById('scan-btn').disabled = true;
+
+  let logIdx = 0;
+  const logEl = document.getElementById('scan-log');
+  const progEl = document.getElementById('scan-progress');
+
+  const iv = setInterval(() => {
+    if (logIdx < LOGS.length) {
+      logEl.textContent = LOGS[logIdx];
+      progEl.style.width = Math.round((logIdx / LOGS.length) * 90) + '%';
+      logIdx++;
+    }
+  }, 2200);
+
+  try {
+    const resp = await fetch('/scan', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({
+        url,
+        tester: document.getElementById('tester').value,
+        client: document.getElementById('client').value,
+      })
+    });
+    const data = await resp.json();
+    clearInterval(iv);
+    progEl.style.width = '100%';
+
+    setTimeout(() => {
+      document.getElementById('scanning-state').style.display = 'none';
+      document.getElementById('scan-form').style.opacity = '1';
+      document.getElementById('scan-form').style.pointerEvents = 'auto';
+      document.getElementById('scan-btn').disabled = false;
+
+      if (data.error) { alert('Scan error: ' + data.error); return; }
+      scanData = data;
+      renderResults(data);
+    }, 400);
+  } catch(e) {
+    clearInterval(iv);
+    document.getElementById('scanning-state').style.display = 'none';
+    document.getElementById('scan-form').style.opacity = '1';
+    document.getElementById('scan-form').style.pointerEvents = 'auto';
+    document.getElementById('scan-btn').disabled = false;
+    alert('Error: ' + e.message);
+  }
+}
+
+function renderResults(data) {
+  document.getElementById('result-timestamp').textContent =
+    `Scanned ${data.domain} · ${new Date().toLocaleString()} · ${data.elapsed}s`;
+
+  const rh = document.getElementById('risk-header');
+  rh.className = 'risk-header risk-' + data.summary.risk.toLowerCase();
+  const rc = document.getElementById('risk-circle');
+  rc.style.color = SEV[data.summary.risk.toLowerCase()]?.color || '#3dd68c';
+  document.getElementById('risk-score-num').textContent = data.summary.score;
+  document.getElementById('risk-domain').innerHTML =
+    `<span style="color:${SEV[data.summary.risk.toLowerCase()]?.color || '#3dd68c'}">${data.summary.risk} Risk</span> — ${data.domain}`;
+  document.getElementById('risk-meta').textContent =
+    `${data.total} findings · HTTP ${data.status_code} · Server: ${data.server}`;
+
+  const c = data.summary.counts;
+  document.getElementById('count-pills').innerHTML =
+    ['critical','high','medium','low','info']
+      .filter(s => c[s] > 0)
+      .map(s => `<span class="count-pill" style="background:${SEV[s].bg};color:${SEV[s].color}">${c[s]} ${s}</span>`)
+      .join('');
+
+  localStorage.setItem('bugscanner_last', JSON.stringify(data));
+  renderFindings(data.findings);
+  renderMatrix(data);
+  renderModules(data.findings);
+  document.getElementById('results-section').style.display = 'block';
+  document.getElementById('results-section').scrollIntoView({behavior:'smooth', block:'start'});
+}
+
+function renderFindings(findings) {
+  const filtered = activeFilter === 'all' ? findings : findings.filter(f => f.severity === activeFilter);
+  if (!filtered.length) {
+    document.getElementById('findings-container').innerHTML =
+      `<div style="text-align:center;padding:40px;color:var(--text3)">No findings for this filter</div>`;
+    return;
+  }
+  document.getElementById('findings-container').innerHTML = filtered.map((f, i) => {
+    const s = SEV[f.severity] || SEV.info;
+    const cvss = f.cvss_score > 0 ? f.cvss_score.toFixed(1) : '—';
+    return `
+    <div class="finding-card">
+      <div class="finding-top" onclick="toggleFinding(${i})">
+        <span class="finding-module">${f.module}</span>
+        <span class="finding-name">${f.title}</span>
+        <span class="cvss-badge" style="background:${s.bg};color:${s.color}">${cvss}</span>
+        <span class="badge" style="background:${s.bg};color:${s.color};border:1px solid ${s.border};margin-left:4px">${f.severity}</span>
+        <span class="finding-chevron" id="chev-${i}">▶</span>
+      </div>
+      <div class="finding-detail" id="detail-${i}">
+        <div class="detail-grid">
+          <span class="dl">CVSS v3.1</span>
+          <div>
+            <span style="font-family:var(--mono);font-size:14px;font-weight:600;color:${s.color}">${cvss}</span>
+            <span style="font-size:12px;color:var(--text3);margin-left:8px">${f.cvss_rating}</span>
+            <div class="cvss-vector">${f.cvss_vector || ''}</div>
+          </div>
+          <span class="dl">Description</span>
+          <span class="dv">${f.description}</span>
+          <span class="dl">Fix</span>
+          <span class="dv" style="color:#6ed89a">${f.recommendation}</span>
+          ${f.evidence ? `<span class="dl">Evidence</span><div class="evidence-box">${f.evidence}</div>` : ''}
+          ${f.reference ? `<span class="dl">Reference</span><span class="dv"><a href="${f.reference}" target="_blank">${f.reference}</a></span>` : ''}
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function toggleFinding(i) {
+  document.getElementById('detail-'+i).classList.toggle('open');
+  document.getElementById('chev-'+i).classList.toggle('open');
+}
+
+function filterFindings(sev, btn) {
+  activeFilter = sev;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  if (scanData) renderFindings(scanData.findings);
+}
+
+function renderMatrix(data) {
+  const c = data.summary.counts;
+  const sevs = ['critical','high','medium','low','info'];
+  document.getElementById('matrix-grid').innerHTML =
+    sevs.map(s => `<div class="matrix-header" style="color:${SEV[s].color}">${s}</div>`).join('') +
+    sevs.map(s => `<div class="matrix-cell" style="background:${c[s]>0?SEV[s].bg:'var(--bg2)'}">
+      <div class="num" style="color:${c[s]>0?SEV[s].color:'var(--text3)'}">${c[s]}</div>
+      <div class="lbl">finding${c[s]!==1?'s':''}</div>
+    </div>`).join('');
+
+  const max = Math.max(1, ...Object.values(c));
+  document.getElementById('severity-bars').innerHTML = sevs.map(s => `
+    <div class="bar-row">
+      <span class="bar-label" style="color:${SEV[s].color}">${s}</span>
+      <div class="bar-track"><div class="bar-fill" style="width:${(c[s]/max*100).toFixed(0)}%;background:${SEV[s].color}"></div></div>
+      <span class="bar-count">${c[s]}</span>
+    </div>`).join('');
+}
+
+function renderModules(findings) {
+  const byModule = {};
+  findings.forEach(f => { (byModule[f.module] = byModule[f.module]||[]).push(f); });
+  document.getElementById('modules-container').innerHTML = Object.entries(byModule).map(([mod, fs]) => `
+    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:20px;margin-bottom:14px">
+      <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:12px;display:flex;justify-content:space-between">
+        ${mod} <span style="font-family:var(--mono);font-size:12px;color:var(--text3)">${fs.length} finding${fs.length!==1?'s':''}</span>
+      </div>
+      ${fs.map(f => {
+        const s = SEV[f.severity]||SEV.info;
+        return `<div style="display:flex;gap:10px;align-items:center;padding:8px 0;border-bottom:1px solid var(--border)">
+          <span style="background:${s.bg};color:${s.color};padding:2px 8px;border-radius:4px;font-size:11px;font-family:var(--mono);min-width:60px;text-align:center">${f.severity}</span>
+          <span style="font-size:13px;color:var(--text)">${f.title}</span>
+          <span style="font-family:var(--mono);font-size:11px;color:${s.color};margin-left:auto">${f.cvss_score>0?f.cvss_score.toFixed(1):'—'}</span>
+        </div>`;
+      }).join('')}
+    </div>`).join('');
+}
+
+function switchTab(tab, el) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  ['findings','matrix','modules'].forEach(t => {
+    document.getElementById('tab-'+t).style.display = t === tab ? 'block' : 'none';
+  });
+}
+
+async function generateReport() {
+  if (!scanData) { alert('Run a scan first'); return; }
+  const apiKey = document.getElementById('api-key').value.trim();
+  const btn = document.querySelector('.gen-report-btn');
+  btn.textContent = 'Generating report...';
+  btn.disabled = true;
+
+  try {
+    const resp = await fetch('/generate-report', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ scan_results: scanData, api_key: apiKey || null })
+    });
+    const data = await resp.json();
+    if (data.error) { alert('Report error: ' + data.error); return; }
+    localStorage.setItem('bugscanner_report', JSON.stringify(data));
+    window.open('/report', '_blank');
+  } finally {
+    btn.innerHTML = `<svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M9 1H3a1 1 0 00-1 1v12a1 1 0 001 1h10a1 1 0 001-1V6l-5-5z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/><path d="M9 1v5h5" stroke="currentColor" stroke-width="1.3"/></svg> Generate Professional Report`;
+    btn.disabled = false;
+  }
+}
+
+function exportJSON() {
+  if (!scanData) return;
+  const blob = new Blob([JSON.stringify(scanData, null, 2)], {type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `bugscan_${scanData.domain}_${Date.now()}.json`;
+  a.click();
+}
+
+document.getElementById('url').addEventListener('keydown', e => { if(e.key==='Enter') startScan(); });
+</script>
+{% endblock %}

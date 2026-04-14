@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{% block title %}BugScanner Pro{% endblock %}</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  :root{
+    --bg:#0b0d13;--bg2:#101320;--bg3:#161a28;--bg4:#1c2030;
+    --border:#222636;--border2:#2c3048;
+    --text:#e2e5f5;--text2:#8085a0;--text3:#484c65;
+    --green:#2ec87a;--green-bg:#0a2018;--red:#e84040;--amber:#e8ab20;--blue:#4880f0;--teal:#28d8d0;--purple:#9068f0;
+    --font:'Inter',sans-serif;--mono:'JetBrains Mono',monospace;
+    --radius:10px;--radius-lg:16px;
+  }
+  body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:100vh;font-size:14px;line-height:1.5}
+  a{color:var(--blue);text-decoration:none}a:hover{text-decoration:underline}
+  ::-webkit-scrollbar{width:5px;height:5px}::-webkit-scrollbar-track{background:var(--bg2)}::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
+  nav{background:var(--bg2);border-bottom:1px solid var(--border);padding:0 32px;display:flex;align-items:center;height:54px;gap:28px;position:sticky;top:0;z-index:50}
+  .logo{font-family:var(--mono);font-size:14px;font-weight:600;color:var(--green);letter-spacing:-.3px}
+  .logo span{color:var(--text3)}
+  .nav-links a{font-size:13px;color:var(--text3);transition:color .15s}
+  .nav-links a:hover,.nav-links a.active{color:var(--text);text-decoration:none}
+  .badge{display:inline-flex;align-items:center;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:500;font-family:var(--mono)}
+  .btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:var(--radius);font-size:13px;font-weight:500;cursor:pointer;border:none;font-family:var(--font);transition:all .15s}
+  .btn-primary{background:var(--green);color:#000}.btn-primary:hover{background:#25b06a}
+  .btn-ghost{background:transparent;color:var(--text2);border:1px solid var(--border2)}.btn-ghost:hover{background:var(--bg4);color:var(--text)}
+  .section{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg)}
+</style>
+{% block extra_head %}{% endblock %}
+</head>
+<body>
+<nav>
+  <div class="logo">&#x25FC; BugScanner<span>Pro</span></div>
+  <div class="nav-links" style="display:flex;gap:20px">
+    <a href="/" class="{{ 'active' if request.path == '/' }}">Scanner</a>
+    <a href="/report" class="{{ 'active' if request.path == '/report' }}" target="_blank">Report</a>
+  </div>
+</nav>
+{% block body %}{% endblock %}
+</body>
+</html>

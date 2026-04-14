@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pentest Report</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --black:#0a0b0e;--dark:#12141a;--dark2:#1a1d25;--border:#252836;
+  --text:#e8eaf2;--text2:#8b8fa8;--text3:#4e5168;
+  --red:#e84040;--orange:#f07840;--amber:#e8ab20;--green:#2ec87a;--blue:#4880f0;--purple:#9068f0;
+}
+body{font-family:'Inter',sans-serif;background:var(--black);color:var(--text);font-size:13px;line-height:1.6}
+a{color:var(--blue)}
+
+/* Cover page */
+.cover{min-height:100vh;display:flex;flex-direction:column;justify-content:space-between;padding:60px;position:relative;overflow:hidden;background:var(--black)}
+.cover::before{content:'';position:absolute;top:-200px;right:-200px;width:600px;height:600px;border-radius:50%;background:radial-gradient(circle,rgba(32,80,200,.15) 0%,transparent 70%);pointer-events:none}
+.cover::after{content:'';position:absolute;bottom:-100px;left:-100px;width:400px;height:400px;border-radius:50%;background:radial-gradient(circle,rgba(46,200,120,.08) 0%,transparent 70%);pointer-events:none}
+.cover-logo{font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--text3);letter-spacing:2px;text-transform:uppercase}
+.cover-logo span{color:var(--green)}
+.cover-center{text-align:center;z-index:1}
+.cover-tag{display:inline-block;background:rgba(46,200,122,.1);border:1px solid rgba(46,200,122,.3);color:var(--green);padding:5px 16px;border-radius:20px;font-size:11px;text-transform:uppercase;letter-spacing:2px;margin-bottom:28px}
+.cover-title{font-size:52px;font-weight:700;letter-spacing:-1.5px;margin-bottom:8px;line-height:1}
+.cover-title .accent{color:var(--green)}
+.cover-subtitle{font-size:18px;color:var(--text2);font-weight:300}
+.cover-meta{display:flex;justify-content:space-between;align-items:flex-end;z-index:1;border-top:1px solid var(--border);padding-top:28px}
+.cover-meta-left{display:grid;gap:8px}
+.cover-meta-item{display:flex;gap:12px;align-items:center;font-size:13px}
+.cover-meta-label{color:var(--text3);width:80px}
+.cover-meta-val{color:var(--text);font-weight:500}
+.risk-chip{padding:8px 20px;border-radius:8px;font-size:14px;font-weight:700;font-family:'JetBrains Mono',monospace;letter-spacing:1px}
+
+/* Layout */
+.report-body{max-width:900px;margin:0 auto;padding:60px 40px}
+.page-break{page-break-before:always;margin-top:60px}
+
+/* Section headings */
+.section-number{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--green);letter-spacing:2px;text-transform:uppercase;margin-bottom:4px}
+.section-title{font-size:26px;font-weight:700;letter-spacing:-0.5px;margin-bottom:20px;padding-bottom:16px;border-bottom:1px solid var(--border)}
+
+/* Summary cards */
+.summary-row{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:32px}
+.sum-card{background:var(--dark);border:1px solid var(--border);border-radius:12px;padding:18px 12px;text-align:center}
+.sum-num{font-size:32px;font-weight:700;font-family:'JetBrains Mono',monospace;line-height:1}
+.sum-label{font-size:10px;text-transform:uppercase;letter-spacing:1.5px;color:var(--text3);margin-top:6px}
+
+/* TOC */
+.toc-item{display:flex;align-items:center;padding:10px 0;border-bottom:1px solid var(--border)}
+.toc-num{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--green);width:28px}
+.toc-label{flex:1;font-size:13px;color:var(--text2)}
+.toc-dots{flex:1;border-bottom:1px dashed var(--border);margin:0 8px;height:10px}
+.toc-page{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text3)}
+
+/* Prose */
+.prose{font-size:14px;color:var(--text2);line-height:1.8;margin-bottom:20px}
+.prose strong{color:var(--text);font-weight:600}
+
+/* Finding blocks */
+.finding-block{margin-bottom:20px;border:1px solid var(--border);border-radius:14px;overflow:hidden}
+.finding-block-header{padding:18px 22px;display:flex;align-items:center;gap:14px;border-bottom:1px solid var(--border)}
+.finding-block-title{font-size:15px;font-weight:600;color:var(--text);flex:1}
+.finding-block-body{padding:20px 22px}
+.cvss-row{display:flex;align-items:center;gap:16px;background:var(--dark);border-radius:10px;padding:12px 16px;margin-bottom:16px}
+.cvss-score-big{font-family:'JetBrains Mono',monospace;font-size:32px;font-weight:700;line-height:1}
+.cvss-details{flex:1}
+.cvss-vector{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--text3);margin-top:4px;word-break:break-all}
+.detail-table{width:100%;border-collapse:collapse}
+.detail-table td{padding:8px 0;border-bottom:1px solid var(--border);vertical-align:top;font-size:13px}
+.detail-table td:first-child{color:var(--text3);font-size:11px;text-transform:uppercase;letter-spacing:1px;width:110px;font-weight:500;padding-right:12px;padding-top:10px}
+.detail-table tr:last-child td{border-bottom:none}
+.evidence-code{background:var(--dark2);border:1px solid var(--border);border-radius:8px;padding:10px 14px;font-family:'JetBrains Mono',monospace;font-size:11px;color:#5ec8c8;word-break:break-all;line-height:1.6;margin-top:4px}
+.fix-text{color:#5ed890;line-height:1.6}
+.ai-box{background:rgba(46,200,122,.05);border:1px solid rgba(46,200,122,.2);border-radius:8px;padding:14px;margin-top:12px}
+.ai-box-label{font-size:10px;text-transform:uppercase;letter-spacing:2px;color:rgba(46,200,122,.5);margin-bottom:8px;font-weight:600}
+.ai-box-text{font-size:13px;color:rgba(46,200,122,.8);line-height:1.7}
+
+/* Badges */
+.sev-badge{display:inline-flex;align-items:center;padding:3px 10px;border-radius:5px;font-size:11px;font-weight:600;font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:.5px}
+.sev-critical{background:rgba(232,64,64,.15);color:var(--red);border:1px solid rgba(232,64,64,.3)}
+.sev-high{background:rgba(240,120,64,.15);color:var(--orange);border:1px solid rgba(240,120,64,.3)}
+.sev-medium{background:rgba(232,171,32,.15);color:var(--amber);border:1px solid rgba(232,171,32,.3)}
+.sev-low{background:rgba(46,200,122,.15);color:var(--green);border:1px solid rgba(46,200,122,.3)}
+.sev-info{background:rgba(72,128,240,.15);color:var(--blue);border:1px solid rgba(72,128,240,.3)}
+
+/* Remediation table */
+.remed-table{width:100%;border-collapse:collapse;margin-top:12px}
+.remed-table th{text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:1.5px;color:var(--text3);padding:8px 12px;border-bottom:1px solid var(--border);font-weight:500}
+.remed-table td{padding:10px 12px;border-bottom:1px solid var(--border);font-size:12px;vertical-align:middle}
+.remed-table tr:last-child td{border-bottom:none}
+.priority-chip{padding:2px 8px;border-radius:4px;font-size:10px;font-weight:600;font-family:'JetBrains Mono',monospace}
+
+/* Print */
+@media print{
+  body{background:#fff;color:#1a1a2e}
+  .cover{background:linear-gradient(135deg,#0a0b14,#151625);-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .print-hide{display:none!important}
+  .finding-block,.sum-card,.cvss-row{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .page-break{page-break-before:always}
+}
+</style>
+</head>
+<body>
+
+<!-- Cover Page -->
+<div class="cover">
+  <div class="cover-logo">&#x25FC; BugScanner<span>Pro</span> — Security Assessment</div>
+  <div class="cover-center">
+    <div class="cover-tag">Confidential Security Report</div>
+    <div class="cover-title">Penetration<br>Test <span class="accent">Report</span></div>
+    <div class="cover-subtitle">Web Application Security Assessment</div>
+  </div>
+  <div class="cover-meta">
+    <div class="cover-meta-left">
+      <div class="cover-meta-item"><span class="cover-meta-label">Target</span><span class="cover-meta-val" id="cv-target">—</span></div>
+      <div class="cover-meta-item"><span class="cover-meta-label">Client</span><span class="cover-meta-val" id="cv-client">—</span></div>
+      <div class="cover-meta-item"><span class="cover-meta-label">Tester</span><span class="cover-meta-val" id="cv-tester">—</span></div>
+      <div class="cover-meta-item"><span class="cover-meta-label">Date</span><span class="cover-meta-val" id="cv-date">—</span></div>
+    </div>
+    <div class="risk-chip" id="cv-risk-chip">—</div>
+  </div>
+</div>
+
+<!-- Report body -->
+<div class="report-body">
+
+  <!-- Table of Contents -->
+  <div style="margin-bottom:60px">
+    <div class="section-number">Contents</div>
+    <div class="section-title">Table of Contents</div>
+    <div class="toc-item"><span class="toc-num">1</span><span class="toc-label">Executive Summary</span><span class="toc-dots"></span><span class="toc-page">1</span></div>
+    <div class="toc-item"><span class="toc-num">2</span><span class="toc-label">Scope & Methodology</span><span class="toc-dots"></span><span class="toc-page">2</span></div>
+    <div class="toc-item"><span class="toc-num">3</span><span class="toc-label">Findings Summary</span><span class="toc-dots"></span><span class="toc-page">3</span></div>
+    <div class="toc-item"><span class="toc-num">4</span><span class="toc-label">Detailed Findings</span><span class="toc-dots"></span><span class="toc-page">4</span></div>
+    <div class="toc-item"><span class="toc-num">5</span><span class="toc-label">Remediation Roadmap</span><span class="toc-dots"></span><span class="toc-page">5</span></div>
+  </div>
+
+  <!-- 1. Executive Summary -->
+  <div class="page-break">
+    <div class="section-number">Section 01</div>
+    <div class="section-title">Executive Summary</div>
+    <div class="prose" id="exec-summary"></div>
+  </div>
+
+  <!-- 2. Methodology -->
+  <div style="margin-top:48px">
+    <div class="section-number">Section 02</div>
+    <div class="section-title">Scope & Methodology</div>
+    <div class="prose" id="methodology-text"></div>
+  </div>
+
+  <!-- 3. Summary -->
+  <div class="page-break">
+    <div class="section-number">Section 03</div>
+    <div class="section-title">Findings Summary</div>
+    <div class="summary-row" id="summary-cards"></div>
+    <table class="remed-table" style="margin-top:0">
+      <thead><tr><th>#</th><th>Title</th><th>Severity</th><th>CVSS</th><th>Module</th></tr></thead>
+      <tbody id="summary-table"></tbody>
+    </table>
+  </div>
+
+  <!-- 4. Detailed Findings -->
+  <div class="page-break">
+    <div class="section-number">Section 04</div>
+    <div class="section-title">Detailed Findings</div>
+    <div id="detailed-findings"></div>
+  </div>
+
+  <!-- 5. Remediation Roadmap -->
+  <div class="page-break">
+    <div class="section-number">Section 05</div>
+    <div class="section-title">Remediation Roadmap</div>
+    <div class="prose">The following table prioritises remediation effort. Critical and High findings should be addressed within 24–72 hours. Medium within the current sprint. Low and Info items should be scheduled for the next release cycle.</div>
+    <table class="remed-table">
+      <thead><tr><th>Priority</th><th>Finding</th><th>Severity</th><th>CVSS</th><th>Effort</th></tr></thead>
+      <tbody id="remed-table"></tbody>
+    </table>
+  </div>
+
+</div>
+
+<!-- Print / back buttons -->
+<div style="text-align:center;padding:32px;background:var(--dark);border-top:1px solid var(--border)" class="print-hide">
+  <button onclick="window.print()" style="background:var(--green);color:#000;border:none;padding:12px 28px;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;margin-right:12px">Print / Save as PDF</button>
+  <button onclick="history.back()" style="background:transparent;color:var(--text2);border:1px solid var(--border);padding:12px 28px;border-radius:10px;font-size:14px;cursor:pointer">← Back</button>
+</div>
+
+<script>
+const SEV_C = {critical:'#e84040',high:'#f07840',medium:'#e8ab20',low:'#2ec87a',info:'#4880f0'};
+const SEV_BG = {critical:'rgba(232,64,64,.15)',high:'rgba(240,120,64,.15)',medium:'rgba(232,171,32,.15)',low:'rgba(46,200,122,.15)',info:'rgba(72,128,240,.15)'};
+const EFFORT = {critical:'Immediate',high:'24–72 hrs',medium:'1–2 weeks',low:'Next release',info:'Backlog'};
+
+const d = JSON.parse(localStorage.getItem('bugscanner_report') || 'null');
+if (!d) {
+  document.querySelector('.report-body').innerHTML = '<div style="text-align:center;padding:80px;color:#5e6180">No report data. <a href="/">Run a scan first →</a></div>';
+} else {
+  // Cover
+  document.getElementById('cv-target').textContent  = d.target_url;
+  document.getElementById('cv-client').textContent  = d.client;
+  document.getElementById('cv-tester').textContent  = d.tester;
+  document.getElementById('cv-date').textContent    = d.report_date;
+  const riskChip = document.getElementById('cv-risk-chip');
+  riskChip.textContent = d.risk + ' Risk';
+  riskChip.style.background = SEV_BG[d.risk.toLowerCase()] || SEV_BG.low;
+  riskChip.style.color = SEV_C[d.risk.toLowerCase()] || SEV_C.low;
+  riskChip.style.border = `1px solid ${SEV_C[d.risk.toLowerCase()]||SEV_C.low}44`;
+
+  // Executive summary
+  document.getElementById('exec-summary').innerHTML = d.exec_summary;
+  if (d.ai_powered) {
+    document.getElementById('exec-summary').innerHTML +=
+      '<div style="display:inline-flex;align-items:center;gap:6px;background:rgba(144,104,240,.1);border:1px solid rgba(144,104,240,.3);border-radius:4px;padding:3px 10px;font-size:10px;color:#9068f0;margin-top:12px;letter-spacing:1px">✦ AI-GENERATED SUMMARY</div>';
+  }
+
+  // Methodology
+  document.getElementById('methodology-text').innerHTML = d.methodology +
+    `<br><br><strong>Target URL:</strong> <code style="font-family:'JetBrains Mono',monospace;background:var(--dark2);padding:2px 6px;border-radius:4px;color:#5ec8c8">${d.target_url}</code><br>
+     <strong>Assessment Date:</strong> ${d.report_date}<br>
+     <strong>Tester:</strong> ${d.tester}<br>
+     <strong>Scan Duration:</strong> ${d.elapsed} seconds`;
+
+  // Summary cards
+  const c = d.counts;
+  const sevs = ['critical','high','medium','low','info'];
+  document.getElementById('summary-cards').innerHTML = sevs.map(s => `
+    <div class="sum-card">
+      <div class="sum-num" style="color:${c[s]>0?SEV_C[s]:'#3a3d55'}">${c[s]}</div>
+      <div class="sum-label">${s}</div>
+    </div>`).join('');
+
+  // Summary table
+  document.getElementById('summary-table').innerHTML = d.findings.map((f,i) => `
+    <tr>
+      <td style="color:var(--text3);font-family:'JetBrains Mono',monospace;font-size:11px">${String(i+1).padStart(2,'0')}</td>
+      <td style="color:var(--text)">${f.title}</td>
+      <td><span class="sev-badge sev-${f.severity}">${f.severity}</span></td>
+      <td style="font-family:'JetBrains Mono',monospace;color:${SEV_C[f.severity]}">${f.cvss_score>0?f.cvss_score.toFixed(1):'—'}</td>
+      <td style="color:var(--text3);font-size:12px">${f.module}</td>
+    </tr>`).join('');
+
+  // Detailed findings
+  const actionable = d.findings.filter(f => f.severity !== 'info');
+  document.getElementById('detailed-findings').innerHTML = actionable.map((f, i) => {
+    const sc = SEV_C[f.severity] || '#888';
+    const sb = SEV_BG[f.severity] || 'transparent';
+    return `
+    <div class="finding-block" style="border-left:4px solid ${sc}">
+      <div class="finding-block-header" style="background:${sb}">
+        <span class="sev-badge sev-${f.severity}">${f.severity}</span>
+        <span class="finding-block-title">${f.title}</span>
+        <span style="font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:600;color:${sc}">${f.cvss_score>0?'CVSS '+f.cvss_score.toFixed(1):''}</span>
+      </div>
+      <div class="finding-block-body">
+        <div class="cvss-row">
+          <div class="cvss-score-big" style="color:${sc}">${f.cvss_score>0?f.cvss_score.toFixed(1):'N/A'}</div>
+          <div class="cvss-details">
+            <div style="font-size:13px;font-weight:600;color:var(--text)">${f.cvss_rating}</div>
+            <div class="cvss-vector">${f.cvss_vector||''}</div>
+          </div>
+          <div style="text-align:right">
+            <div style="font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--text3)">Module</div>
+            <div style="font-size:13px;color:var(--text)">${f.module}</div>
+          </div>
+        </div>
+        ${f.ai_analysis ? `
+          <div class="ai-box">
+            <div class="ai-box-label">✦ AI Risk Analysis</div>
+            <div class="ai-box-text">${f.ai_analysis}</div>
+          </div>` : ''}
+        <table class="detail-table" style="margin-top:${f.ai_analysis?'16px':'0'}">
+          <tr><td>Description</td><td style="color:var(--text2)">${f.description}</td></tr>
+          ${f.evidence ? `<tr><td>Evidence</td><td><div class="evidence-code">${f.evidence}</div></td></tr>` : ''}
+          <tr><td>Fix</td><td class="fix-text">${f.recommendation}</td></tr>
+          ${f.reference ? `<tr><td>Reference</td><td><a href="${f.reference}" target="_blank">${f.reference}</a></td></tr>` : ''}
+        </table>
+      </div>
+    </div>`;
+  }).join('');
+
+  // Remediation roadmap
+  const priority_order = {critical:1,high:2,medium:3,low:4,info:5};
+  const sorted_for_remed = d.findings
+    .filter(f => f.severity !== 'info')
+    .sort((a,b) => priority_order[a.severity]-priority_order[b.severity]);
+
+  document.getElementById('remed-table').innerHTML = sorted_for_remed.map((f,i) => {
+    const priority = f.severity === 'critical' || f.severity === 'high' ? 'Immediate' : f.severity === 'medium' ? 'Scheduled' : 'Planned';
+    const pColor = f.severity === 'critical' ? SEV_C.critical : f.severity === 'high' ? SEV_C.high : f.severity === 'medium' ? SEV_C.medium : SEV_C.low;
+    return `<tr>
+      <td><span class="priority-chip" style="background:${SEV_BG[f.severity]};color:${pColor}">${priority}</span></td>
+      <td style="color:var(--text)">${f.title}</td>
+      <td><span class="sev-badge sev-${f.severity}">${f.severity}</span></td>
+      <td style="font-family:'JetBrains Mono',monospace;color:${pColor}">${f.cvss_score>0?f.cvss_score.toFixed(1):'—'}</td>
+      <td style="color:var(--text3)">${EFFORT[f.severity]}</td>
+    </tr>`;
+  }).join('');
+}
+</script>
+</body>
+</html>
